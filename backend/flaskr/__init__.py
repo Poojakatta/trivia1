@@ -8,16 +8,6 @@ from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
-def paginate_questions(request, selection):
-    page = request.args.get('page', 1, type=int)
-    start = (page - 1) * QUESTIONS_PER_PAGE
-    end = start + QUESTIONS_PER_PAGE
-
-    questions = [question.format() for question in selection]
-    current_questions = questions[start:end]
-    
-    return current_questions
-
 def create_app(test_config=None):
   # create and configure the app
   app = Flask(__name__)
@@ -67,17 +57,20 @@ def create_app(test_config=None):
 
   @app.route('/questions', methods=['GET'])
   def get_questions():
-    selection = Question.query.all()
-    questions = paginate_questions(request, selection)
+    selected_page = request.args.get('page', 1, type=int)
+    current_index = selected_page - 1
+    selection = Question.query.order_by(Question.id).limit(QUESTIONS_PER_PAGE).offset(current_index * QUESTIONS_PER_PAGE).all()
+    questions = [question.format for question in selection]
+
+    if (len(questions) == 0):
+      abort(404)
 
     categories = Category.query.all()
     categories_all = {}
     for category in categories:
       categories_all[category.id] = category.type
     
-    if (len(questions) == 0):
-      abort(404)
-
+    
     return jsonify({
       'success': True,
       'questions':questions,
@@ -118,12 +111,12 @@ def create_app(test_config=None):
   def add_new_question():
     body=request.get_json()
 
-
     if body.get('searchTerm'):
       question_search_term = body.get('searchTerm')
-      selection = Question.query.filter(Question.question.ilike(f'%{question_search_term}%')).all()
-      questions = paginate_questions(request, selection)
-      
+      selection = Question.query.filter(Question.question.ilike(f'%{question_search_term}%')).order_by(Question.id).all()
+
+      questions = [question.format for question in selection]      
+  
       if(len(questions)==0):
        abort(404)
       else:
@@ -146,7 +139,7 @@ def create_app(test_config=None):
         question.insert()
 
         selection = Question.query.order_by(Question.id).all()
-        questions=paginate_questions(request, selection)
+        
 
         return jsonify({
          'success': True

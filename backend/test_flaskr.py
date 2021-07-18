@@ -6,6 +6,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flaskr import create_app
 from models import setup_db, Question, Category
 
+DB_HOST = os.getenv('DB_HOST', '127.0.0.1:5000')  
+DB_USER = os.getenv('DB_USER', 'postgres')  
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'postgres')  
+DB_NAME = os.getenv('DB_NAME', 'trivia')  
+DB_PATH = 'postgresql://{}:{}@{}/{}'.format(DB_USER, DB_PASSWORD, DB_HOST, DB_NAME)
 
 class TriviaTestCase(unittest.TestCase):
     """This class represents the trivia test case"""
@@ -14,8 +19,8 @@ class TriviaTestCase(unittest.TestCase):
         """Define test variables and initialize app."""
         self.app = create_app()
         self.client = self.app.test_client
-        self.database_name = "trivia"
-        self.database_path = "postgresql://pooja:1234@{}/{}".format('localhost:5432', self.database_name)
+        self.database_name = DB_NAME
+        self.database_path = DB_PATH
         setup_db(self.app, self.database_path)
 
         self.new_question = {
